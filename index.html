@@ -238,7 +238,7 @@ body{display:flex;flex-direction:column;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="https://accounts.google.com/gsi/client" onload="googleLoaded()"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const CLIENT_ID='207719403467-1hvl2etjotc50okj25mfumh99jmeag1p.apps.googleusercontent.com';
@@ -419,9 +419,9 @@ function renderCharts(){
 
 // ── GOOGLE SIGN IN ─────────────────────────────────────────
 function signIn(){
-  if(typeof google==='undefined'||!google.accounts){
-    toast('Please wait 3 seconds and try again');
-    setTimeout(()=>{ if(typeof google!=='undefined'&&google.accounts) toast('Ready! Tap Sign in now'); },3000);
+  if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
+    // Auto retry every second until Google loads
+    setTimeout(signIn, 1000);
     return;
   }
   const client=google.accounts.oauth2.initTokenClient({
@@ -568,4 +568,3 @@ updateSyncUI(false);
 </script>
 </body>
 </html>
-
