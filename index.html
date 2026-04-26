@@ -242,7 +242,7 @@ body{display:flex;flex-direction:column;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const CLIENT_ID='207719403467-1hvl2etjotc50okj25mfumh99jmeag1p.apps.googleusercontent.com';
-const SCOPES='https://www.googleapis.com/auth/drive.appdata';
+const SCOPES='https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 const BACKUP_FILE='HomeExpenses_backup.json';
 const LS_KEY='hh_expense_v2';
 const LS_SYNC='hh_sync_meta';
@@ -442,15 +442,24 @@ function signOut(){
   toast('Signed out');
 }
 function fetchGoogleProfile(){
-  fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+gToken}})
-  .then(r=>r.json()).then(u=>{
-    gUser=u;
-    document.getElementById('g-name').textContent=u.name||'-';
-    document.getElementById('g-email').textContent=u.email||'-';
-    document.getElementById('g-avatar').textContent=(u.name||'?')[0].toUpperCase();
+  fetch('https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses',{
+    headers:{Authorization:'Bearer '+gToken}
+  }).then(r=>r.json()).then(u=>{
+    const name=(u.names&&u.names[0]&&u.names[0].displayName)||'Google User';
+    const email=(u.emailAddresses&&u.emailAddresses[0]&&u.emailAddresses[0].value)||'Signed in';
+    gUser={name,email};
+    document.getElementById('g-name').textContent=name;
+    document.getElementById('g-email').textContent=email;
+    document.getElementById('g-avatar').textContent=name[0].toUpperCase();
     document.getElementById('profile-card').style.display='block';
     document.getElementById('signin-card').style.display='none';
-  }).catch(()=>{});
+  }).catch(()=>{
+    document.getElementById('g-name').textContent='Google User';
+    document.getElementById('g-email').textContent='Signed in';
+    document.getElementById('g-avatar').textContent='G';
+    document.getElementById('profile-card').style.display='block';
+    document.getElementById('signin-card').style.display='none';
+  });
 }
 function updateSyncUI(loggedIn){
   document.getElementById('btn-signin').style.display=loggedIn?'none':'flex';
