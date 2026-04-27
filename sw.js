@@ -1,4 +1,4 @@
-const CACHE = 'home-expenses-v1';
+const CACHE = 'home-expenses-v3';
 const ASSETS = [
   './index.html',
   './manifest.json'
