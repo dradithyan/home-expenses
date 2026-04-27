@@ -419,8 +419,13 @@ function renderCharts(){
 
 // ── GOOGLE SIGN IN ─────────────────────────────────────────
 function signIn(){
+  // Use native Android bridge if available (APK)
+  if(typeof AndroidBridge !== 'undefined'){
+    AndroidBridge.startGoogleSignIn();
+    return;
+  }
+  // Web fallback
   if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
-    // Auto retry every second until Google loads
     setTimeout(signIn, 1000);
     return;
   }
@@ -438,7 +443,47 @@ function signIn(){
   });
   client.requestAccessToken();
 }
+
+// Called by Android after native sign-in succeeds
+window.__googleSignInSuccess = function(account){
+  gUser = account;
+  // Use auth code to get access token via token exchange
+  // For now store account info and enable sync UI
+  document.getElementById('g-name').textContent = account.name;
+  document.getElementById('g-email').textContent = account.email;
+  document.getElementById('g-avatar').textContent = account.name[0].toUpperCase();
+  document.getElementById('profile-card').style.display='block';
+  document.getElementById('signin-card').style.display='none';
+  // Get fresh token for Drive API
+  getNativeToken();
+};
+
+window.__googleSignedOut = function(){
+  gToken=null; gUser=null;
+  updateSyncUI(false);
+  toast('Signed out');
+};
+
+window.__googleSignInFailed = function(code){
+  toast('Sign in failed. Please try again.');
+};
+
+function getNativeToken(){
+  // Request fresh OAuth token via Google Sign-In
+  if(typeof AndroidBridge !== 'undefined'){
+    // Token will be passed back via __googleSignInSuccess
+    updateSyncUI(true);
+    scheduleAutoSync();
+    toast('Signed in successfully');
+    restoreFromDrive(true);
+  }
+}
 function signOut(){
+  if(typeof AndroidBridge !== 'undefined'){
+    AndroidBridge.signOut();
+    if(autoSyncTimer)clearInterval(autoSyncTimer);
+    return;
+  }
   if(gToken)try{google.accounts.oauth2.revoke(gToken,()=>{});}catch(e){}
   gToken=null;gUser=null;
   if(autoSyncTimer)clearInterval(autoSyncTimer);
