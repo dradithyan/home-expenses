@@ -420,10 +420,19 @@ function renderCharts(){
 // ── GOOGLE SIGN IN ─────────────────────────────────────────
 function signIn(){
   // Use native Android bridge if available (APK)
-  if(typeof AndroidBridge !== 'undefined'){
-    AndroidBridge.startGoogleSignIn();
-    return;
-  }
+  try {
+    if(typeof AndroidBridge !== 'undefined' && AndroidBridge.isNative()){
+      AndroidBridge.startGoogleSignIn();
+      return;
+    }
+  } catch(e){}
+  // Also try window.AndroidBridge
+  try {
+    if(window.AndroidBridge){
+      window.AndroidBridge.startGoogleSignIn();
+      return;
+    }
+  } catch(e){}
   // Web fallback
   if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
     setTimeout(signIn, 1000);
@@ -603,6 +612,15 @@ function renderSyncTab(){
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 }
+
+// Called by Android when page finishes loading
+window.__onAndroidReady = function(){
+  console.log('Android bridge ready');
+  // Auto restore if already signed in
+  if(window.__nativeAccount){
+    window.__googleSignInSuccess(window.__nativeAccount);
+  }
+};
 
 // ── INIT ───────────────────────────────────────────────────
 load();
